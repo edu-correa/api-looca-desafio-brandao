@@ -1,23 +1,24 @@
 package org.example;
 
-import com.sun.jna.platform.unix.X11;
-import org.springframework.jdbc.core.BeanPropertyRowMapper.*;
+import com.github.britooo.looca.api.core.Looca;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.DataClassRowMapper;
 
-import javax.crypto.Mac;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
 import java.util.List;
+import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
+import java.text.DecimalFormat;
 
-public class dbCommands {
+public class dbCommands implements IGeneralDbCommands{
     private JdbcTemplate con;
     private Integer fkAgencia;
     private Integer fkTipoMaquina;
     private String locale;
     private Machine machine;
+    private static final DecimalFormat dfSharp = new DecimalFormat("#.##");
+
     public dbCommands() {
         Connection connection = new Connection();
         Terminal terminal = new Terminal();
@@ -27,49 +28,11 @@ public class dbCommands {
         locale = terminal.askLocal();
     }
 
-    private String getMacAddress(){
-        InetAddress ip;
-        try {
-
-            ip = InetAddress.getLocalHost();
-            System.out.println("Endereço de ipv4 atual: " + ip.getHostAddress());
-
-            NetworkInterface network = NetworkInterface.getByInetAddress(ip);
-
-            byte[] mac = network.getHardwareAddress();
 
 
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < mac.length; i++) {
-                sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
-            }
-
-            System.out.print("MAC address atual: " + sb.toString());
-
-            return sb.toString();
-
-        } catch (UnknownHostException e) {
-            System.out.println("catched");
-            e.printStackTrace();
-        } catch (SocketException e){
-            System.out.println("catched");
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private String getMachineName(){
-        try{
-            String machineName = InetAddress.getLocalHost().getHostName();
-            return machineName;
-        }catch (Exception e){
-            System.out.println("Exception caught ="+e.getMessage());
-        }
-        return null;
-    }
-
-    public void searchByMacAddress(){
-        String macAddress = getMacAddress();
+    @Override
+    public void searchByMacAddress() throws InterruptedException {
+        String macAddress = IGeneralDbCommands.getMacAddress();
 
         List<Machine> resultados = con.query("SELECT * FROM maquina WHERE macAddress = ?",
                 new DataClassRowMapper<>(Machine.class),
@@ -81,6 +44,7 @@ public class dbCommands {
             for (Machine m : resultados){
                 this.machine = m;
                 System.out.println(m);
+                startGathering();
             }
 
         } else{
@@ -89,18 +53,134 @@ public class dbCommands {
             } else{
                 System.out.println("\nMaquina ainda não existe: prosseguindo para criação dela.");
                 insertNewMachine(macAddress);
+
             }
         }
     }
+    public void askComponentes(){
+        Scanner numScan = new Scanner(System.in);
+        Integer resposta  = 0;
+        Boolean alreadyProcessador = false, alreadyRam = false, alreadyDisco = false, alreadyAny = false, wannaStop = false;
+        do {
+            wannaStop = false;
+            System.out.println("Quais componentes deseja?");
+            if (!alreadyProcessador && !alreadyRam && !alreadyDisco){
+                System.out.println("1 - Processador");
+                System.out.println("2 - RAM");
+                System.out.println("3 - Disco");
+            }
+            else {
+                if (!alreadyProcessador){
+                    System.out.println("1 - Processador");
+                }
+                if (!alreadyRam){
+                    System.out.println("2 - RAM");
+                }
+                if (!alreadyDisco){
+                    System.out.println("3 - Disco");
+                }
+                System.out.println("4 - Sair");
+            }
+            resposta = numScan.nextInt();
+            if (resposta == 1 && !alreadyProcessador){
+                inserirProcessador(this.machine.idMaquina());
+                alreadyProcessador = true;
+                alreadyAny = true;
+            } else if (resposta == 2 && !alreadyRam){
+                inserirRam(this.machine.idMaquina());
+                alreadyRam = true;
+                alreadyAny = true;
+            } else if (resposta == 3 && !alreadyDisco) {
+                inserirDisco(this.machine.idMaquina());
+                alreadyDisco = true;
+                alreadyAny = true;
+            } else if (resposta ==4){
+                if (alreadyAny){
+                    wannaStop = true;
+                }
+            }
+            else {
+                System.out.println("bolas");
+            }
+            System.out.println(resposta != 4 && alreadyAny);
 
-    private void insertNewMachine(String macAddress){
-        con.update("INSERT INTO maquina VALUES (null, ?, ?, ?, ?, ?)", this.fkAgencia, this.fkTipoMaquina, macAddress, locale, getMachineName());
+        } while (!wannaStop);
+
+    }
+    @Override
+    public void insertNewMachine(String macAddress) throws InterruptedException {
+        con.update("INSERT INTO maquina VALUES (null, ?, ?, ?, ?, ?)", this.fkAgencia, this.fkTipoMaquina, macAddress, locale, IGeneralDbCommands.getMachineName());
         System.out.println("Maquina inserida com sucesso!");
+        List<Machine> resultados = con.query("SELECT * FROM maquina WHERE macAddress = ?",
+                new DataClassRowMapper<>(Machine.class),
+                macAddress);
+        machine = resultados.get(0);
+        askComponentes();
         System.out.println("Prosseguindo com teste de inserção!");
         searchByMacAddress();
     }
+    public void startGathering() throws InterruptedException {
+        Looca luquinhas = new Looca();
+        List<Components> resultados = con.query("SELECT componente.* FROM componente JOIN maquinaComponente on fkComponente = idComponente" +
+                        " WHERE fkMaquina = ?",
+                new DataClassRowMapper<>(Components.class),
+                this.machine.idMaquina());
 
-    private void startGathering(){
-        System.out.println("ainda em produção!");
+        while (true){
+            for (Components resultado : resultados) {
+                if (resultado.idComponente() == 1){
+                    inserirDadosProcessador(luquinhas);
+                } else if (resultado.idComponente() == 2){
+                    inserirDadosRAM(luquinhas);
+                } else if (resultado.idComponente() == 3){
+                    inserirDadosDisco(luquinhas);
+                }
+            }
+            TimeUnit.SECONDS.sleep(2);
+        }
     }
+
+    @Override
+    public void inserirProcessador(Integer idMaquina) {
+        con.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 1);
+        System.out.println("Processador inserido");
+    }
+
+    @Override
+    public void inserirRam(Integer idMaquina) {
+        con.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 2);
+        System.out.println("RAM inserida");
+    }
+
+    @Override
+    public void inserirDisco(Integer idMaquina) {
+        con.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 3);
+        System.out.println("Disco inserido");
+    }
+
+    public void inserirDadosProcessador(Looca lucas){
+        con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
+                1,  dfSharp.format(lucas.getProcessador().getUso()));
+        System.out.println("Uso de processador: " + dfSharp.format(lucas.getProcessador().getUso()));
+    }
+    public void inserirDadosRAM(Looca lucas){
+        Double ramAtual = lucas.getMemoria().getEmUso().doubleValue();
+        Double ramTotal = lucas.getMemoria().getTotal().doubleValue();
+        Double porcentagem = (ramAtual / ramTotal) * 100;
+
+        con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
+                2,  dfSharp.format(porcentagem));
+        System.out.println("Uso de Ram: " + dfSharp.format(porcentagem));
+    }
+
+    public void inserirDadosDisco(Looca lucas){
+        MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
+        Double max = (double)memoryMXBean.getHeapMemoryUsage().getMax() /1073741824;
+        Double commited = (double)memoryMXBean.getHeapMemoryUsage().getCommitted() /1073741824;
+        Double perc = max / commited;
+        con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
+                3,  dfSharp.format(perc));
+        System.out.println("Uso de disco: " + dfSharp.format(perc));
+    }
+
 }

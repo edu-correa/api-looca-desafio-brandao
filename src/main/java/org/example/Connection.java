@@ -11,8 +11,8 @@ public class Connection {
         BasicDataSource banco = new BasicDataSource();
         banco.setDriverClassName("com.mysql.cj.jdbc.Driver");
         banco.setUrl("jdbc:mysql://localhost:3306/bankSecure?useTimezone=true&serverTimezone=UTC");
-        banco.setUsername("aluno");
-        banco.setPassword("sptech");
+        banco.setUsername("root");
+        banco.setPassword("220807");
         con = new JdbcTemplate(banco);
     }
 
