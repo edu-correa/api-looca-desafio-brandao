@@ -11,18 +11,18 @@ import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.text.DecimalFormat;
 
-public class dbCommands implements IGeneralDbCommands{
-    private JdbcTemplate con;
+public class dbCommandsSQL implements IGeneralDbCommands{
+    private JdbcTemplate conSQL;
     private Integer fkAgencia;
     private Integer fkTipoMaquina;
     private String locale;
     private Machine machine;
     private static final DecimalFormat dfSharp = new DecimalFormat("#.##");
 
-    public dbCommands() {
-        Connection connection = new Connection();
+    public dbCommandsSQL() {
+        ConnectionSQL connection = new ConnectionSQL();
         Terminal terminal = new Terminal();
-        con = connection.getCon();
+        conSQL = connection.getCon();
         fkAgencia = terminal.askFkAgencia();
         fkTipoMaquina = terminal.askTipoMaquina();
         locale = terminal.askLocal();
@@ -34,7 +34,7 @@ public class dbCommands implements IGeneralDbCommands{
     public void searchByMacAddress() throws InterruptedException {
         String macAddress = IGeneralDbCommands.getMacAddress();
 
-        List<Machine> resultados = con.query("SELECT * FROM maquina WHERE macAddress = ?",
+        List<Machine> resultados = conSQL.query("SELECT * FROM maquina WHERE macAddress = ?",
                 new DataClassRowMapper<>(Machine.class),
                 macAddress);
 
@@ -106,9 +106,9 @@ public class dbCommands implements IGeneralDbCommands{
     }
     @Override
     public void insertNewMachine(String macAddress) throws InterruptedException {
-        con.update("INSERT INTO maquina VALUES (null, ?, ?, ?, ?, ?)", this.fkAgencia, this.fkTipoMaquina, macAddress, locale, IGeneralDbCommands.getMachineName());
+        conSQL.update("INSERT INTO maquina VALUES (null, ?, ?, ?, ?, ?)", this.fkAgencia, this.fkTipoMaquina, macAddress, locale, IGeneralDbCommands.getMachineName());
         System.out.println("Maquina inserida com sucesso!");
-        List<Machine> resultados = con.query("SELECT * FROM maquina WHERE macAddress = ?",
+        List<Machine> resultados = conSQL.query("SELECT * FROM maquina WHERE macAddress = ?",
                 new DataClassRowMapper<>(Machine.class),
                 macAddress);
         machine = resultados.get(0);
@@ -118,7 +118,7 @@ public class dbCommands implements IGeneralDbCommands{
     }
     public void startGathering() throws InterruptedException {
         Looca luquinhas = new Looca();
-        List<Components> resultados = con.query("SELECT componente.* FROM componente JOIN maquinaComponente on fkComponente = idComponente" +
+        List<Components> resultados = conSQL.query("SELECT componente.* FROM componente JOIN maquinaComponente on fkComponente = idComponente" +
                         " WHERE fkMaquina = ?",
                 new DataClassRowMapper<>(Components.class),
                 this.machine.idMaquina());
@@ -139,24 +139,24 @@ public class dbCommands implements IGeneralDbCommands{
 
     @Override
     public void inserirProcessador(Integer idMaquina) {
-        con.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 1);
+        conSQL.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 1);
         System.out.println("Processador inserido");
     }
 
     @Override
     public void inserirRam(Integer idMaquina) {
-        con.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 2);
+        conSQL.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 2);
         System.out.println("RAM inserida");
     }
 
     @Override
     public void inserirDisco(Integer idMaquina) {
-        con.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 3);
+        conSQL.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 3);
         System.out.println("Disco inserido");
     }
 
     public void inserirDadosProcessador(Looca lucas){
-        con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
+        conSQL.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
                 1,  dfSharp.format(lucas.getProcessador().getUso()));
         System.out.println("Uso de processador: " + dfSharp.format(lucas.getProcessador().getUso()));
     }
@@ -165,7 +165,7 @@ public class dbCommands implements IGeneralDbCommands{
         Double ramTotal = lucas.getMemoria().getTotal().doubleValue();
         Double porcentagem = (ramAtual / ramTotal) * 100;
 
-        con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
+        conSQL.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
                 2,  dfSharp.format(porcentagem));
         System.out.println("Uso de Ram: " + dfSharp.format(porcentagem));
     }
@@ -175,7 +175,7 @@ public class dbCommands implements IGeneralDbCommands{
         Double max = (double)memoryMXBean.getHeapMemoryUsage().getMax() /1073741824;
         Double commited = (double)memoryMXBean.getHeapMemoryUsage().getCommitted() /1073741824;
         Double perc = max / commited;
-        con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
+        conSQL.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
                 3,  dfSharp.format(perc));
         System.out.println("Uso de disco: " + dfSharp.format(perc));
     }
