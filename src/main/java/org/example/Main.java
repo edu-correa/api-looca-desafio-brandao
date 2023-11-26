@@ -11,7 +11,7 @@ public class Main {
     public static void main(String[] args) throws InterruptedException {
         dbCommands db = new dbCommands();
 
-        db.searchByMacAddress();
+        db.iniciate();
 
     }
 }

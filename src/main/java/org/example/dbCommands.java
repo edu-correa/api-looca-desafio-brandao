@@ -25,19 +25,25 @@ public class dbCommands implements IGeneralDbCommands{
 
     public dbCommands() {
         Connection connection = new Connection();
-        Terminal terminal = new Terminal();
         con = connection.getCon();
+
+    }
+
+    public void iniciate() throws InterruptedException {
+        Terminal terminal = new Terminal();
         fkAgencia = terminal.askFkAgencia();
         fkTipoMaquina = terminal.askTipoMaquina();
         locale = terminal.askLocal();
-    }
 
+        searchByMacAddress();
+    }
 
 
     @Override
     public void searchByMacAddress() throws InterruptedException {
         String macAddress = IGeneralDbCommands.getMacAddress();
 
+        System.out.println(macAddress);
         List<Machine> resultados = con.query("SELECT * FROM maquina WHERE macAddress = ?",
                 new DataClassRowMapper<>(Machine.class),
                 macAddress);

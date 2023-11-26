@@ -22,13 +22,18 @@ public class dbCommandsSQL implements IGeneralDbCommands{
 
     public dbCommandsSQL() {
         ConnectionSQL connection = new ConnectionSQL();
-        Terminal terminal = new Terminal();
         conSQL = connection.getCon();
+    }
+
+
+    public void iniciate() throws InterruptedException {
+        Terminal terminal = new Terminal();
         fkAgencia = terminal.askFkAgencia();
         fkTipoMaquina = terminal.askTipoMaquina();
         locale = terminal.askLocal();
-    }
 
+        searchByMacAddress();
+    }
 
 
     @Override
