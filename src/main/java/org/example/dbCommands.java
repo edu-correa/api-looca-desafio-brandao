@@ -1,6 +1,8 @@
 package org.example;
 
 import com.github.britooo.looca.api.core.Looca;
+import com.github.britooo.looca.api.group.processador.Processador;
+import com.github.britooo.looca.api.group.temperatura.Temperatura;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.DataClassRowMapper;
 
@@ -12,6 +14,8 @@ import java.util.concurrent.TimeUnit;
 import java.text.DecimalFormat;
 
 public class dbCommands implements IGeneralDbCommands{
+
+
     private JdbcTemplate con;
     private Integer fkAgencia;
     private Integer fkTipoMaquina;
@@ -141,7 +145,13 @@ public class dbCommands implements IGeneralDbCommands{
     public void inserirProcessador(Integer idMaquina) {
         con.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 1);
         System.out.println("Processador inserido");
+
+        con.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 4);
+
+        System.out.println("Temperatura adicionada");
     }
+
+
 
     @Override
     public void inserirRam(Integer idMaquina) {
@@ -159,7 +169,19 @@ public class dbCommands implements IGeneralDbCommands{
         con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
                 1,  dfSharp.format(lucas.getProcessador().getUso()));
         System.out.println("Uso de processador: " + dfSharp.format(lucas.getProcessador().getUso()));
+        inserirDadosTemperatura(lucas);
     }
+
+    public void inserirDadosTemperatura(Looca lucas){
+        Temperatura temperatura = lucas.getTemperatura();
+        Double temperaturaEscrita = temperatura.getTemperatura();
+
+        con.update("INSERT INTO registros(fkMaquina, fkComponente, valor, dataHora)VALUES (?,?,?,now())",
+                this.machine.idMaquina(),4,temperaturaEscrita);
+
+        System.out.println("Temperatura de CPU em ºC: " + temperaturaEscrita);
+    }
+
     public void inserirDadosRAM(Looca lucas){
         Double ramAtual = lucas.getMemoria().getEmUso().doubleValue();
         Double ramTotal = lucas.getMemoria().getTotal().doubleValue();

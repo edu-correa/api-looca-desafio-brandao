@@ -1,6 +1,7 @@
 package org.example;
 
 import com.github.britooo.looca.api.core.Looca;
+import com.github.britooo.looca.api.group.temperatura.Temperatura;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.DataClassRowMapper;
 
@@ -159,6 +160,17 @@ public class dbCommandsSQL implements IGeneralDbCommands{
         conSQL.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
                 1,  dfSharp.format(lucas.getProcessador().getUso()));
         System.out.println("Uso de processador: " + dfSharp.format(lucas.getProcessador().getUso()));
+        inserirDadosTemperatura(lucas);
+    }
+
+    public void inserirDadosTemperatura(Looca lucas){
+        Temperatura temperatura = lucas.getTemperatura();
+        String temperaturaEscrita = dfSharp.format(temperatura.getTemperatura());
+
+        conSQL.update("INSERT INTO registros(fkMaquina, fkComponente, valor, dataHora)VALUES (?,?,?,now())",
+                this.machine.idMaquina(),4,temperaturaEscrita);
+
+        System.out.println("Temperatura de CPU em ºC: " + temperaturaEscrita);
     }
     public void inserirDadosRAM(Looca lucas){
         Double ramAtual = lucas.getMemoria().getEmUso().doubleValue();
