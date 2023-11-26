@@ -15,6 +15,17 @@ import java.text.DecimalFormat;
 
 public class dbCommands implements IGeneralDbCommands{
 
+    public static final String ANSI_RESET = "\u001B[0m";
+    public static final String CYAN_BOLD_BRIGHT = "\033[1;96m";
+
+    public static final String GREEN_BOLD_BRIGHT = "\033[1;92m";
+
+    public static final String YELLOW_BOLD_BRIGHT = "\033[1;93m";
+
+    public static final String WHITE_BOLD_BRIGHT = "\033[1;97m";
+    public static final String PURPLE_BOLD_BRIGHT = "\033[1;95m";// PURPLE
+
+    public static final String BLUE_BOLD_BRIGHT = "\033[1;94m";  // BLUE
 
     private JdbcTemplate con;
     private Integer fkAgencia;
@@ -50,7 +61,7 @@ public class dbCommands implements IGeneralDbCommands{
 
         Integer contadorDeResultados = resultados.size();
         if (contadorDeResultados == 1){
-            System.out.println("\nConsultando maquina");
+            System.out.println(GREEN_BOLD_BRIGHT + "\nConsultando maquina" + ANSI_RESET);
             for (Machine m : resultados){
                 this.machine = m;
                 System.out.println(m);
@@ -73,23 +84,23 @@ public class dbCommands implements IGeneralDbCommands{
         Boolean alreadyProcessador = false, alreadyRam = false, alreadyDisco = false, alreadyAny = false, wannaStop = false;
         do {
             wannaStop = false;
-            System.out.println("Quais componentes deseja?");
+            System.out.println(WHITE_BOLD_BRIGHT + "Quais componentes deseja?" + ANSI_RESET);
             if (!alreadyProcessador && !alreadyRam && !alreadyDisco){
-                System.out.println("1 - Processador");
-                System.out.println("2 - RAM");
-                System.out.println("3 - Disco");
+                System.out.println(PURPLE_BOLD_BRIGHT + "1 - Processador" + ANSI_RESET);
+                System.out.println(BLUE_BOLD_BRIGHT + "2 - RAM" + ANSI_RESET);
+                System.out.println(YELLOW_BOLD_BRIGHT + "3 - Disco" + ANSI_RESET);
             }
             else {
                 if (!alreadyProcessador){
-                    System.out.println("1 - Processador");
+                    System.out.println(PURPLE_BOLD_BRIGHT + "1 - Processador" + ANSI_RESET);
                 }
                 if (!alreadyRam){
-                    System.out.println("2 - RAM");
+                    System.out.println(BLUE_BOLD_BRIGHT + "2 - RAM" + ANSI_RESET);
                 }
                 if (!alreadyDisco){
-                    System.out.println("3 - Disco");
+                    System.out.println(YELLOW_BOLD_BRIGHT + "3 - Disco" + ANSI_RESET);
                 }
-                System.out.println("4 - Sair");
+                System.out.println(WHITE_BOLD_BRIGHT + "4 - Sair" + ANSI_RESET);
             }
             resposta = numScan.nextInt();
             if (resposta == 1 && !alreadyProcessador){
@@ -117,13 +128,13 @@ public class dbCommands implements IGeneralDbCommands{
     @Override
     public void insertNewMachine(String macAddress) throws InterruptedException {
         con.update("INSERT INTO maquina VALUES (null, ?, ?, ?, ?, ?)", this.fkAgencia, this.fkTipoMaquina, macAddress, locale, IGeneralDbCommands.getMachineName());
-        System.out.println("Maquina inserida com sucesso!");
+        System.out.println( GREEN_BOLD_BRIGHT + "Maquina inserida com sucesso!" + ANSI_RESET);
         List<Machine> resultados = con.query("SELECT * FROM maquina WHERE macAddress = ?",
                 new DataClassRowMapper<>(Machine.class),
                 macAddress);
         machine = resultados.get(0);
         askComponentes();
-        System.out.println("Prosseguindo com teste de inserção!");
+        System.out.println(BLUE_BOLD_BRIGHT + "Prosseguindo com teste de inserção!" + ANSI_RESET);
         searchByMacAddress();
     }
     public void startGathering() throws InterruptedException {
@@ -154,7 +165,7 @@ public class dbCommands implements IGeneralDbCommands{
 
         con.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 4);
 
-        System.out.println("Temperatura adicionada");
+        System.out.println( PURPLE_BOLD_BRIGHT + "Temperatura adicionada" + ANSI_RESET);
     }
 
 
@@ -162,19 +173,19 @@ public class dbCommands implements IGeneralDbCommands{
     @Override
     public void inserirRam(Integer idMaquina) {
         con.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 2);
-        System.out.println("RAM inserida");
+        System.out.println( BLUE_BOLD_BRIGHT + "RAM inserida" + ANSI_RESET);
     }
 
     @Override
     public void inserirDisco(Integer idMaquina) {
         con.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 3);
-        System.out.println("Disco inserido");
+        System.out.println(YELLOW_BOLD_BRIGHT + "Disco inserido" + ANSI_RESET);
     }
 
     public void inserirDadosProcessador(Looca lucas){
         con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
                 1,  dfSharp.format(lucas.getProcessador().getUso()));
-        System.out.println("Uso de processador: " + dfSharp.format(lucas.getProcessador().getUso()));
+        System.out.println( PURPLE_BOLD_BRIGHT + "Uso de processador: " + dfSharp.format(lucas.getProcessador().getUso()) + ANSI_RESET);
         inserirDadosTemperatura(lucas);
     }
 
@@ -185,7 +196,7 @@ public class dbCommands implements IGeneralDbCommands{
         con.update("INSERT INTO registros(fkMaquina, fkComponente, valor, dataHora)VALUES (?,?,?,now())",
                 this.machine.idMaquina(),4,temperaturaEscrita);
 
-        System.out.println("Temperatura de CPU em ºC: " + temperaturaEscrita);
+        System.out.println(PURPLE_BOLD_BRIGHT + "Temperatura de CPU em ºC: " + temperaturaEscrita + ANSI_RESET);
     }
 
     public void inserirDadosRAM(Looca lucas){
@@ -195,7 +206,7 @@ public class dbCommands implements IGeneralDbCommands{
 
         con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
                 2,  dfSharp.format(porcentagem));
-        System.out.println("Uso de Ram: " + dfSharp.format(porcentagem));
+        System.out.println( BLUE_BOLD_BRIGHT + "Uso de Ram: " + dfSharp.format(porcentagem) + ANSI_RESET);
     }
 
     public void inserirDadosDisco(Looca lucas){
@@ -205,7 +216,7 @@ public class dbCommands implements IGeneralDbCommands{
         Double perc = max / commited;
         con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
                 3,  dfSharp.format(perc));
-        System.out.println("Uso de disco: " + dfSharp.format(perc));
+        System.out.println(YELLOW_BOLD_BRIGHT + "Uso de disco: " + dfSharp.format(perc) + ANSI_RESET);
     }
 
 }
