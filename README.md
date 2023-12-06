@@ -4,4 +4,4 @@
 Desafio do Brandão de criação das maquinas e inserção dos registros dos componentes corretos.
 Diagrama de Classe referente ao desafio: 
 
-<img src="">
+<img src="Diagrama_de_arquitetura (3).jpg">
