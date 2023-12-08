@@ -1,9 +1,11 @@
 package org.example.main;
 
+import org.example.comandos.IGeneralDbCommands;
 import org.example.Enum.TipoMaquina;
 
 import java.util.Scanner;
 
+import org.example.comandos.dbCommands;
 public class Terminal {
 
     public static final String ANSI_RESET = "\u001B[0m";
@@ -18,6 +20,7 @@ public class Terminal {
 
     public static final String BLUE_BOLD_BRIGHT = "\033[1;94m";  // BLUE
     public Integer askFkAgencia(){
+        System.out.println("oi");
         System.out.println( PURPLE_BOLD_BRIGHT + ".・。.・゜✭ Desafio de Programação Java: Monitoramento de Sistema com Princípios SOLID .・。.・゜✭ " + ANSI_RESET);
         System.out.println( PURPLE_BOLD_BRIGHT + "by Danielle Munakata e Eduardo Corrêa \n" + ANSI_RESET);
 
@@ -52,5 +55,54 @@ public class Terminal {
         String cep = strScanner.nextLine();
 
         return cep;
+    }
+
+    public void askComponentes(IGeneralDbCommands commands){
+
+        Scanner numScan = new Scanner(System.in);
+        Integer resposta  = 0;
+        Boolean alreadyProcessador = false, alreadyRam = false, alreadyDisco = false, alreadyAny = false, wannaStop = false;
+        do {
+            wannaStop = false;
+            System.out.println(WHITE_BOLD_BRIGHT + "Quais componentes deseja?" + ANSI_RESET);
+            if (!alreadyProcessador && !alreadyRam && !alreadyDisco){
+                System.out.println( CYAN_BOLD_BRIGHT + "1 - Processador" + ANSI_RESET);
+                System.out.println( GREEN_BOLD_BRIGHT + "2 - RAM" + ANSI_RESET);
+                System.out.println(YELLOW_BOLD_BRIGHT + "3 - Disco" + ANSI_RESET);
+            }
+            else {
+                if (!alreadyProcessador){
+                    System.out.println( CYAN_BOLD_BRIGHT + "1 - Processador" + ANSI_RESET);
+                }
+                if (!alreadyRam){
+                    System.out.println( GREEN_BOLD_BRIGHT + "2 - RAM" + ANSI_RESET);
+                }
+                if (!alreadyDisco){
+                    System.out.println(YELLOW_BOLD_BRIGHT + "3 - Disco" + ANSI_RESET);
+                }
+                System.out.println( WHITE_BOLD_BRIGHT + "4 - Sair" + ANSI_RESET);
+            }
+            resposta = numScan.nextInt();
+            if (resposta == 1 && !alreadyProcessador){
+                commands.inserirProcessador();
+                alreadyProcessador = true;
+                alreadyAny = true;
+            } else if (resposta == 2 && !alreadyRam){
+                commands.inserirRam();
+                alreadyRam = true;
+                alreadyAny = true;
+            } else if (resposta == 3 && !alreadyDisco) {
+                commands.inserirDisco();
+                alreadyDisco = true;
+                alreadyAny = true;
+            } else if (resposta ==4){
+                if (alreadyAny){
+                    wannaStop = true;
+                }
+            }
+            System.out.println(resposta != 4 && alreadyAny);
+
+        } while (!wannaStop);
+
     }
 }

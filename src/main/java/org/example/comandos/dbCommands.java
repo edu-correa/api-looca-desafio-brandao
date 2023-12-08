@@ -1,11 +1,11 @@
 package org.example.comandos;
 
 import com.github.britooo.looca.api.core.Looca;
-import org.example.conexao.Connection;
 import com.github.britooo.looca.api.group.temperatura.Temperatura;
+import org.example.conexao.Connection;
+import org.example.comandos.IGeneralDbCommands;
 import org.example.DAO.Components;
 import org.example.DAO.Machine;
-import org.example.conexao.ConnectionSQL;
 import org.example.main.Terminal;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.DataClassRowMapper;
@@ -82,62 +82,17 @@ public class dbCommands implements IGeneralDbCommands {
             }
         }
     }
-    public void askComponentes(){
-        Scanner numScan = new Scanner(System.in);
-        Integer resposta  = 0;
-        Boolean alreadyProcessador = false, alreadyRam = false, alreadyDisco = false, alreadyAny = false, wannaStop = false;
-        do {
-            wannaStop = false;
-            System.out.println(WHITE_BOLD_BRIGHT + "Quais componentes deseja?" + ANSI_RESET);
-            if (!alreadyProcessador && !alreadyRam && !alreadyDisco){
-                System.out.println(PURPLE_BOLD_BRIGHT + "1 - Processador" + ANSI_RESET);
-                System.out.println(BLUE_BOLD_BRIGHT + "2 - RAM" + ANSI_RESET);
-                System.out.println(YELLOW_BOLD_BRIGHT + "3 - Disco" + ANSI_RESET);
-            }
-            else {
-                if (!alreadyProcessador){
-                    System.out.println(PURPLE_BOLD_BRIGHT + "1 - Processador" + ANSI_RESET);
-                }
-                if (!alreadyRam){
-                    System.out.println(BLUE_BOLD_BRIGHT + "2 - RAM" + ANSI_RESET);
-                }
-                if (!alreadyDisco){
-                    System.out.println(YELLOW_BOLD_BRIGHT + "3 - Disco" + ANSI_RESET);
-                }
-                System.out.println(WHITE_BOLD_BRIGHT + "4 - Sair" + ANSI_RESET);
-            }
-            resposta = numScan.nextInt();
-            if (resposta == 1 && !alreadyProcessador){
-                inserirProcessador(this.machine.idMaquina());
-                alreadyProcessador = true;
-                alreadyAny = true;
-            } else if (resposta == 2 && !alreadyRam){
-                inserirRam(this.machine.idMaquina());
-                alreadyRam = true;
-                alreadyAny = true;
-            } else if (resposta == 3 && !alreadyDisco) {
-                inserirDisco(this.machine.idMaquina());
-                alreadyDisco = true;
-                alreadyAny = true;
-            } else if (resposta ==4){
-                if (alreadyAny){
-                    wannaStop = true;
-                }
-            }
-            System.out.println(resposta != 4 && alreadyAny);
 
-        } while (!wannaStop);
-
-    }
     @Override
     public void insertNewMachine(String macAddress) throws InterruptedException {
-        con.update("INSERT INTO maquina VALUES (null, ?, ?, ?, ?, ?, ?)", this.fkAgencia, this.fkTipoMaquina, macAddress, locale, IGeneralDbCommands.getMachineName(), getSo());
+        Terminal terminal = new Terminal();
+        con.update("INSERT INTO maquina VALUES (null, ?, ?, ?, ?, ?)", this.fkAgencia, this.fkTipoMaquina, macAddress, locale, IGeneralDbCommands.getMachineName());
         System.out.println( GREEN_BOLD_BRIGHT + "Maquina inserida com sucesso!" + ANSI_RESET);
         List<Machine> resultados = con.query("SELECT * FROM maquina WHERE macAddress = ?",
                 new DataClassRowMapper<>(Machine.class),
                 macAddress);
         machine = resultados.get(0);
-        askComponentes();
+        terminal.askComponentes(this);
         System.out.println(BLUE_BOLD_BRIGHT + "Prosseguindo com teste de inserção!" + ANSI_RESET);
         searchByMacAddress();
     }
@@ -158,19 +113,16 @@ public class dbCommands implements IGeneralDbCommands {
                     inserirDadosDisco(luquinhas);
                 }
             }
-            inserirServicosAtivos(luquinhas);
-            inserirServicosInativos(luquinhas);
-
             TimeUnit.SECONDS.sleep(2);
         }
     }
 
     @Override
-    public void inserirProcessador(Integer idMaquina) {
-        con.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 1);
+    public void inserirProcessador() {
+        con.update("INSERT INTO maquinaComponente VALUES (?, ?)", this.machine.idMaquina(), 1);
         System.out.println("Processador inserido");
 
-        con.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 4);
+        con.update("INSERT INTO maquinaComponente VALUES (?, ?)", this.machine.idMaquina(), 4);
 
         System.out.println( PURPLE_BOLD_BRIGHT + "Temperatura adicionada" + ANSI_RESET);
     }
@@ -178,21 +130,21 @@ public class dbCommands implements IGeneralDbCommands {
 
 
     @Override
-    public void inserirRam(Integer idMaquina) {
-        con.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 2);
+    public void inserirRam() {
+        con.update("INSERT INTO maquinaComponente VALUES (?, ?)", this.machine.idMaquina(), 2);
         System.out.println( BLUE_BOLD_BRIGHT + "RAM inserida" + ANSI_RESET);
     }
 
     @Override
-    public void inserirDisco(Integer idMaquina) {
-        con.update("INSERT INTO maquinaComponente VALUES (?, ?)", idMaquina, 3);
+    public void inserirDisco() {
+        con.update("INSERT INTO maquinaComponente VALUES (?, ?)", this.machine.idMaquina(), 3);
         System.out.println(YELLOW_BOLD_BRIGHT + "Disco inserido" + ANSI_RESET);
     }
 
     public void inserirDadosProcessador(Looca lucas){
         con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
-                1,  (lucas.getProcessador().getUso()));
-        System.out.println( PURPLE_BOLD_BRIGHT + "Uso de processador: " + (lucas.getProcessador().getUso()) + ANSI_RESET);
+                1,  dfSharp.format(lucas.getProcessador().getUso()));
+        System.out.println( PURPLE_BOLD_BRIGHT + "Uso de processador: " + dfSharp.format(lucas.getProcessador().getUso()) + ANSI_RESET);
         inserirDadosTemperatura(lucas);
     }
 
@@ -212,8 +164,8 @@ public class dbCommands implements IGeneralDbCommands {
         Double porcentagem = (ramAtual / ramTotal) * 100;
 
         con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
-                2,  (porcentagem));
-        System.out.println( BLUE_BOLD_BRIGHT + "Uso de Ram: " + (porcentagem) + ANSI_RESET);
+                2,  dfSharp.format(porcentagem));
+        System.out.println( BLUE_BOLD_BRIGHT + "Uso de Ram: " + dfSharp.format(porcentagem) + ANSI_RESET);
     }
 
     public void inserirDadosDisco(Looca lucas){
@@ -222,38 +174,8 @@ public class dbCommands implements IGeneralDbCommands {
         Double commited = (double)memoryMXBean.getHeapMemoryUsage().getCommitted() /1073741824;
         Double perc = max / commited;
         con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
-                3,  (perc));
-        System.out.println(YELLOW_BOLD_BRIGHT + "Uso de disco: " + (perc) + ANSI_RESET);
-    }
-
-    public String getSo(){
-        Looca lucas = new Looca();
-        String sistema = lucas.getSistema().toString();
-
-        String frase = sistema;
-        String array[] = new String[1];
-
-        array = frase.split(":");
-        frase = array[1];
-        array = frase.split("F");
-//        System.out.println("=".repeat(15));
-//        System.out.println(array[0]);
-
-        return array[0];
-    }
-
-    public void inserirServicosAtivos(Looca lucas){
-        Integer servicoAtivo = lucas.getGrupoDeServicos().getTotalServicosAtivos();
-        con.update("INSERT INTO processo VALUES (null, ?, ?, now(), ?)", this.machine.idMaquina(),
-                servicoAtivo, "Ativo");
-        System.out.println(YELLOW_BOLD_BRIGHT + "Serviços Ativos: " + (servicoAtivo) + ANSI_RESET);
-    }
-
-    public void inserirServicosInativos(Looca lucas){
-        Integer servicoInativo = lucas.getGrupoDeServicos().getTotalServicosInativos();
-        con.update("INSERT INTO processo VALUES (null, ?, ?, now(), ?)", this.machine.idMaquina(),
-                servicoInativo, "Inativo");
-        System.out.println(YELLOW_BOLD_BRIGHT + "Serviços Inativos: " + (servicoInativo) + ANSI_RESET);
+                3,  dfSharp.format(perc));
+        System.out.println(YELLOW_BOLD_BRIGHT + "Uso de disco: " + dfSharp.format(perc) + ANSI_RESET);
     }
 
 }

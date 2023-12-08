@@ -2,13 +2,14 @@ package org.example.comandos;
 
 import com.github.britooo.looca.api.core.Looca;
 import org.example.DAO.Machine;
-import com.github.britooo.looca.api.group.rede.RedeInterface;
+
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
+import com.github.britooo.looca.api.group.rede.RedeInterface;
 
 public interface IGeneralDbCommands {
     Machine machine = null;
@@ -16,17 +17,36 @@ public interface IGeneralDbCommands {
     void searchByMacAddress() throws InterruptedException;
 
     public static String getMacAddress(){
-        String mac = "";
-        Looca looca = new Looca();
-        List<RedeInterface> interfacesRede = new ArrayList<>();
-        for(RedeInterface o: looca.getRede().getGrupoDeInterfaces().getInterfaces()){
-            if(o.getNome().equalsIgnoreCase("eth0") || o.getNome().equalsIgnoreCase("wlp3s0")){
-                mac = o.getEnderecoMac();
+        InetAddress ip;
+        try {
+
+            ip = InetAddress.getLocalHost();
+            System.out.println("Endereço de ipv4 atual: " + ip.getHostAddress());
+
+            NetworkInterface network = NetworkInterface.getByInetAddress(ip);
+
+            byte[] mac = network.getHardwareAddress();
+
+
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < mac.length; i++) {
+                sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
             }
+
+            System.out.print("MAC address atual: " + sb.toString());
+
+            return sb.toString();
+
+        } catch (UnknownHostException e) {
+            System.out.println("catched");
+            e.printStackTrace();
+        } catch (SocketException e){
+            System.out.println("catched");
+            e.printStackTrace();
         }
-        looca.getRede().getGrupoDeInterfaces().getInterfaces();
-        return mac;
+        return null;
     }
+
 
     public static String getMachineName(){
         try{
@@ -43,8 +63,8 @@ public interface IGeneralDbCommands {
         System.out.println("ainda em produção!");
     }
 
-    void inserirProcessador(Integer idMaquina);
-    void inserirRam(Integer idMaquina);
-    void inserirDisco(Integer idMaquina);
+    void inserirProcessador();
+    void inserirRam();
+    void inserirDisco();
 
 }
