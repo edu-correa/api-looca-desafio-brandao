@@ -14,6 +14,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.text.DecimalFormat;
 
@@ -97,24 +99,29 @@ public class dbCommands implements IGeneralDbCommands {
         searchByMacAddress();
     }
     public void startGathering() throws InterruptedException {
+        Timer agendador = new Timer();
         Looca luquinhas = new Looca();
         List<Components> resultados = con.query("SELECT componente.* FROM componente JOIN maquinaComponente on fkComponente = idComponente" +
                         " WHERE fkMaquina = ?",
                 new DataClassRowMapper<>(Components.class),
                 this.machine.idMaquina());
 
-        while (true){
-            for (Components resultado : resultados) {
-                if (resultado.idComponente() == 1){
-                    inserirDadosProcessador(luquinhas);
-                } else if (resultado.idComponente() == 2){
-                    inserirDadosRAM(luquinhas);
-                } else if (resultado.idComponente() == 3){
-                    inserirDadosDisco(luquinhas);
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                for (Components resultado : resultados) {
+                    if (resultado.idComponente() == 1){
+                        inserirDadosProcessador(luquinhas);
+                    } else if (resultado.idComponente() == 2){
+                        inserirDadosRAM(luquinhas);
+                    } else if (resultado.idComponente() == 3){
+                        inserirDadosDisco(luquinhas);
+                    }
                 }
             }
-            TimeUnit.SECONDS.sleep(2);
-        }
+        };
+
+        agendador.schedule(task, 0, 1000);
     }
 
     @Override
