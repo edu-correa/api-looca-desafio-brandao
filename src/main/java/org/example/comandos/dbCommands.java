@@ -2,6 +2,7 @@ package org.example.comandos;
 
 import com.github.britooo.looca.api.core.Looca;
 import com.github.britooo.looca.api.group.temperatura.Temperatura;
+import org.example.Slack.AbrirChamado;
 import org.example.conexao.Connection;
 import org.example.comandos.IGeneralDbCommands;
 import org.example.DAO.Components;
@@ -14,8 +15,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.List;
 import java.util.Scanner;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.text.DecimalFormat;
 
@@ -38,9 +37,12 @@ public class dbCommands implements IGeneralDbCommands {
     private Integer fkTipoMaquina;
     private String locale;
     private Machine machine;
+
+    private AbrirChamado abrirChamado;
     private static final DecimalFormat dfSharp = new DecimalFormat("#.##");
 
     public dbCommands() {
+        abrirChamado = new AbrirChamado();
         Connection connection = new Connection();
         con = connection.getCon();
 
@@ -89,6 +91,7 @@ public class dbCommands implements IGeneralDbCommands {
     public void insertNewMachine(String macAddress) throws InterruptedException {
         Terminal terminal = new Terminal();
         con.update("INSERT INTO maquina VALUES (null, ?, ?, ?, ?, ?)", this.fkAgencia, this.fkTipoMaquina, macAddress, locale, IGeneralDbCommands.getMachineName());
+
         System.out.println( GREEN_BOLD_BRIGHT + "Maquina inserida com sucesso!" + ANSI_RESET);
         List<Machine> resultados = con.query("SELECT * FROM maquina WHERE macAddress = ?",
                 new DataClassRowMapper<>(Machine.class),
@@ -99,29 +102,24 @@ public class dbCommands implements IGeneralDbCommands {
         searchByMacAddress();
     }
     public void startGathering() throws InterruptedException {
-        Timer agendador = new Timer();
         Looca luquinhas = new Looca();
         List<Components> resultados = con.query("SELECT componente.* FROM componente JOIN maquinaComponente on fkComponente = idComponente" +
                         " WHERE fkMaquina = ?",
                 new DataClassRowMapper<>(Components.class),
                 this.machine.idMaquina());
 
-        TimerTask task = new TimerTask() {
-            @Override
-            public void run() {
-                for (Components resultado : resultados) {
-                    if (resultado.idComponente() == 1){
-                        inserirDadosProcessador(luquinhas);
-                    } else if (resultado.idComponente() == 2){
-                        inserirDadosRAM(luquinhas);
-                    } else if (resultado.idComponente() == 3){
-                        inserirDadosDisco(luquinhas);
-                    }
+        while (true){
+            for (Components resultado : resultados) {
+                if (resultado.idComponente() == 1){
+                    inserirDadosProcessador(luquinhas);
+                } else if (resultado.idComponente() == 2){
+                    inserirDadosRAM(luquinhas);
+                } else if (resultado.idComponente() == 3){
+                    inserirDadosDisco(luquinhas);
                 }
             }
-        };
-
-        agendador.schedule(task, 0, 1000);
+            TimeUnit.SECONDS.sleep(2);
+        }
     }
 
     @Override
@@ -151,6 +149,15 @@ public class dbCommands implements IGeneralDbCommands {
     public void inserirDadosProcessador(Looca lucas){
         con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
                 1,  dfSharp.format(lucas.getProcessador().getUso()));
+
+        if((lucas.getProcessador().getUso() > 70)){
+            System.out.println(BLUE_BOLD_BRIGHT +"Processador, chamado aberto" + ANSI_RESET);
+            abrirChamado.AbrirChamado(machine.nome(),"processador",lucas.getProcessador().getUso(),3);
+        }else if(lucas.getProcessador().getUso() > 50){
+            System.out.println(BLUE_BOLD_BRIGHT +"Processador, chamado aberto" + ANSI_RESET);
+            abrirChamado.AbrirChamado(machine.nome(),"processador",lucas.getProcessador().getUso(),2);
+        }
+
         System.out.println( PURPLE_BOLD_BRIGHT + "Uso de processador: " + dfSharp.format(lucas.getProcessador().getUso()) + ANSI_RESET);
         inserirDadosTemperatura(lucas);
     }
@@ -162,6 +169,14 @@ public class dbCommands implements IGeneralDbCommands {
         con.update("INSERT INTO registros(fkMaquina, fkComponente, valor, dataHora)VALUES (?,?,?,now())",
                 this.machine.idMaquina(),4,temperaturaEscrita);
 
+        if(temperaturaEscrita > 80){
+            System.out.println(BLUE_BOLD_BRIGHT +"Temperatura, chamado aberto" + ANSI_RESET);
+            abrirChamado.AbrirChamado(machine.nome(),"temperatura CPU",temperaturaEscrita,3);
+        }else if(temperaturaEscrita > 60){
+            System.out.println(BLUE_BOLD_BRIGHT +"Temperatura, chamado aberto" + ANSI_RESET);
+            abrirChamado.AbrirChamado(machine.nome(),"temperatura CPU",temperaturaEscrita,2);
+        }
+
         System.out.println(PURPLE_BOLD_BRIGHT + "Temperatura de CPU em ºC: " + temperaturaEscrita + ANSI_RESET);
     }
 
@@ -172,6 +187,15 @@ public class dbCommands implements IGeneralDbCommands {
 
         con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
                 2,  dfSharp.format(porcentagem));
+
+        if(porcentagem > 80){
+            System.out.println(BLUE_BOLD_BRIGHT +"RAM, chamado aberto" + ANSI_RESET);
+            abrirChamado.AbrirChamado(machine.nome()," Memória RAM",porcentagem,3);
+        }else if(porcentagem > 60){
+            System.out.println(BLUE_BOLD_BRIGHT +"RAM, chamado aberto" + ANSI_RESET);
+            abrirChamado.AbrirChamado(machine.nome(),"Memória RAM",porcentagem,2);
+        }
+
         System.out.println( BLUE_BOLD_BRIGHT + "Uso de Ram: " + dfSharp.format(porcentagem) + ANSI_RESET);
     }
 
@@ -182,6 +206,15 @@ public class dbCommands implements IGeneralDbCommands {
         Double perc = max / commited;
         con.update("INSERT INTO registros VALUES (null, ?, ?, ?, now())", this.machine.idMaquina(),
                 3,  dfSharp.format(perc));
+
+        if(perc > 80){
+            System.out.println(BLUE_BOLD_BRIGHT +"Disco, chamado aberto" + ANSI_RESET);
+            abrirChamado.AbrirChamado(machine.nome(),"Disco",perc,3);
+        }else if(perc > 60){
+            System.out.println(BLUE_BOLD_BRIGHT +"Disco, chamado aberto" + ANSI_RESET);
+            abrirChamado.AbrirChamado(machine.nome(),"Disco",perc,2);
+        }
+
         System.out.println(YELLOW_BOLD_BRIGHT + "Uso de disco: " + dfSharp.format(perc) + ANSI_RESET);
     }
 

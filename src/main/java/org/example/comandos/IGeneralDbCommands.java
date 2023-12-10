@@ -18,7 +18,8 @@ public interface IGeneralDbCommands {
 
     public static String getMacAddress(){
         InetAddress ip;
-        try {
+        return "00:1B:44:11:3A:B7";
+        /*try {
 
             ip = InetAddress.getLocalHost();
             System.out.println("Endereço de ipv4 atual: " + ip.getHostAddress());
@@ -44,7 +45,7 @@ public interface IGeneralDbCommands {
             System.out.println("catched");
             e.printStackTrace();
         }
-        return null;
+        return null;*/
     }
 
 

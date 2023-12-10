@@ -20,7 +20,6 @@ public class Terminal {
 
     public static final String BLUE_BOLD_BRIGHT = "\033[1;94m";  // BLUE
     public Integer askFkAgencia(){
-        System.out.println("oi");
         System.out.println( PURPLE_BOLD_BRIGHT + ".・。.・゜✭ Desafio de Programação Java: Monitoramento de Sistema com Princípios SOLID .・。.・゜✭ " + ANSI_RESET);
         System.out.println( PURPLE_BOLD_BRIGHT + "by Danielle Munakata e Eduardo Corrêa \n" + ANSI_RESET);
 
