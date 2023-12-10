@@ -1,5 +1,5 @@
 # Desafio de Programação Java: Monitoramento de Sistema com Princípios SOLID 
-# by Danielle Munakata e Eduardo Corrêa 
+by Danielle Munakata e Eduardo Corrêa 
 
 Desafio do Brandão de criação das maquinas e inserção dos registros dos componentes corretos.
 
