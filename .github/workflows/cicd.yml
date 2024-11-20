@@ -17,21 +17,23 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 20.12.1
+    - name: instalacao de dependencias do npm
+      run: npm i 
 
     - name: Build do npm
-      run: npm run build 
+      run: npm run dev 
 
     - name: Gerar artefato Github com o .jar gerado
       uses: actions/upload-artifact@v4
       with:
         name: aplicacao
-        path: api-pets-completa/target/*.jar
+        path: ./*
 
-    - name: Gerar artefato Github com os arquivos .sh
-      uses: actions/upload-artifact@v4        
-      with:
-        name: scripts
-        path: .github/scripts/*.sh     
+    # - name: Gerar artefato Github com os arquivos .sh
+    #   uses: actions/upload-artifact@v4        
+    #   with:
+    #     name: scripts
+    #     path: .github/scripts/*.sh     
 
   deploy:
     needs: build
@@ -44,11 +46,11 @@ jobs:
         name: aplicacao
         path: ./
 
-    - name: Recuperar scripts
-      uses: actions/download-artifact@v4
-      with:
-        name: scripts
-        path: ./        
+    # - name: Recuperar scripts
+    #   uses: actions/download-artifact@v4
+    #   with:
+    #     name: scripts
+    #     path: ./        
 
     # - name: Criar arquivo .pem a partir da variável DEPLOY_KEY e fazer o chmod 400 nele
     #   id: setup-key
