@@ -1,0 +1,86 @@
+name: CI/CD para Spring Boot com Maven e publicação em EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Atualização do código
+      uses: actions/checkout@v2
+
+    - name: Definindo a versão da JDK 
+      uses: actions/setup-java@v2
+      with:
+        distribution: 'oracle' # ver opções em https://github.com/actions/setup-java?tab=readme-ov-file#supported-distributions
+        java-version: '17'
+
+    - name: Build do npm
+      run: npm build 
+
+    - name: Gerar artefato Github com o .jar gerado
+      uses: actions/upload-artifact@v4
+      with:
+        name: aplicacao
+        path: api-pets-completa/target/*.jar
+
+    - name: Gerar artefato Github com os arquivos .sh
+      uses: actions/upload-artifact@v4        
+      with:
+        name: scripts
+        path: .github/scripts/*.sh     
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Recuperar artefato
+      uses: actions/download-artifact@v4
+      with:
+        name: aplicacao
+        path: ./
+
+    - name: Recuperar scripts
+      uses: actions/download-artifact@v4
+      with:
+        name: scripts
+        path: ./        
+
+    # - name: Criar arquivo .pem a partir da variável DEPLOY_KEY e fazer o chmod 400 nele
+    #   id: setup-key
+    #   env:
+    #     DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+    #   run: |
+    #     echo "$DEPLOY_KEY" >> $HOME/${{ secrets.NOME_ARQUIVO_PEM }}
+    #     chmod 400 $HOME/${{ secrets.NOME_ARQUIVO_PEM }}
+
+    # - name: Enviar o JAR p/ a EC2
+    #   uses: appleboy/scp-action@master
+    #   with:
+    #     host: ${{ secrets.DEPLOY_HOST }}
+    #     username: ubuntu
+    #     key: ${{ secrets.DEPLOY_KEY }}
+    #     source: "./*.jar"
+    #     target: "/home/ubuntu/deploy-api/"
+
+    # - name: Enviar os Scripts p/ a EC2
+    #   uses: appleboy/scp-action@master
+    #   with:
+    #     host: ${{ secrets.DEPLOY_HOST }}
+    #     username: ubuntu
+    #     key: ${{ secrets.DEPLOY_KEY }}
+    #     source: "./*.sh"
+    #     target: "/home/ubuntu/deploy-api/"
+
+    # - name: Conectar via SSH à EC2 privada para implantar e reiniciar a API
+    #   run: |
+    #     ssh -o StrictHostKeyChecking=no -i $HOME/${{ secrets.NOME_ARQUIVO_PEM }} ubuntu@${{ secrets.DEPLOY_HOST }} '
+    #       scp -i ${{ secrets.NOME_ARQUIVO_PEM }} deploy-api/${{ secrets.NOME_ARQUIVO_JAR }} ubuntu@${{ secrets.IP_PRIVADO_EC2 }}:/home/ubuntu/deploy-api
+    #       scp -i ${{ secrets.NOME_ARQUIVO_PEM }} deploy-api/*.sh ubuntu@${{ secrets.IP_PRIVADO_EC2 }}:/home/ubuntu/deploy-api
+    #       ssh -i ${{ secrets.NOME_ARQUIVO_PEM }} ubuntu@${{ secrets.IP_PRIVADO_EC2 }} "sh /home/ubuntu/deploy-api/api-restart.sh"          
+    #     '
